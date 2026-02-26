@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Admin Users ─────────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          String    @default("admin") // admin | manager
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  clients       Client[]  @relation("CreatedBy")
+  assignments   Client[]  @relation("AssignedTo")
+}
+
+// ─── Clients (companies being onboarded) ─────────────────────────
+model Client {
+  id            String    @id @default(cuid())
+  companyName   String
+  contactName   String
+  contactEmail  String
+  contactPhone  String?
+  industry      String?
+  websiteUrl    String?
+  status        String    @default("invited") // invited | in_progress | submitted | reviewed
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  createdById   String
+  createdBy     User      @relation("CreatedBy", fields: [createdById], references: [id])
+
+  assignedToId  String?
+  assignedTo    User?     @relation("AssignedTo", fields: [assignedToId], references: [id])
+
+  inviteToken   InviteToken?
+  submission    Submission?
+  assets        Asset[]
+  emailLogs     EmailLog[]
+
+  @@index([status])
+  @@index([contactEmail])
+}
+
+// ─── Secure invite tokens ────────────────────────────────────────
+model InviteToken {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  clientId    String    @unique
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([token])
+}
+
+// ─── Onboarding form submission ──────────────────────────────────
+model Submission {
+  id            String    @id @default(cuid())
+  clientId      String    @unique
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Section 1: Company Profile
+  companyLegalName    String?
+  targetTerritory     String?   @db.Text
+  industries          String?   @db.Text
+
+  // Section 2: Services & Differentiators
+  services            String?   @db.Text
+  specializedServices String?   @db.Text
+
+  // Section 3: SWOT Analysis
+  strengths           String?   @db.Text
+  weaknesses          String?   @db.Text
+  opportunities       String?   @db.Text
+  threats             String?   @db.Text
+
+  // Section 4: Team & Contacts
+  marketingContact    Json?     // { name, phone, email }
+  salesContact        Json?     // { name, phone, email }
+  operationsContact   Json?     // { name, phone, email }
+  decisionMaker       Json?     // { name, phone, email, role }
+  preferredComm       String?   // email | phone | slack | teams
+
+  // Section 5: Current Marketing
+  activeChannels      Json?     // ["facebook", "instagram", "google", ...]
+  monthlyBudget       String?   // range string
+  bestPerforming      String?   @db.Text
+  crmSystem           String?
+  erpSystem           String?
+  crmMaturity         String?   // early | developing | mature
+
+  // Section 6: Platform Access (status tracking, NOT passwords)
+  platformAccess      Json?     // { facebook: "granted", instagram: "pending", ... }
+
+  // Section 7: Goals & Priorities
+  sixMonthGoals       String?   @db.Text
+  websiteChanges      String?   @db.Text
+  additionalNotes     String?   @db.Text
+
+  // Progress tracking
+  currentStep         Int       @default(1)
+  completedSteps      Json      @default("[]")  // [1, 2, 3, ...]
+  submittedAt         DateTime?
+  lastSavedAt         DateTime  @default(now())
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+// ─── File uploads (logos, brand guides, etc.) ────────────────────
+model Asset {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileType    String
+  fileSize    Int
+  filePath    String
+  category    String    // logo | brand_guide | report | other
+  createdAt   DateTime  @default(now())
+
+  @@index([clientId])
+}
+
+// ─── Email audit trail ───────────────────────────────────────────
+model EmailLog {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type        String    // invite | reminder | completion | internal_notification
+  recipient   String
+  subject     String
+  resendId    String?   // Resend message ID for tracking
+  status      String    @default("sent") // sent | delivered | bounced | failed
+  sentAt      DateTime  @default(now())
+
+  @@index([clientId])
+  @@index([type])
+}
