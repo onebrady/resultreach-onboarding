@@ -9,21 +9,20 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  const passwordHash = await bcrypt.hash("changeme123", 12)
+  const passwordHash = await bcrypt.hash("$pG&$AGu8ptFKN", 12)
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@resultreach.com" },
-    update: {},
+    where: { email: "onebrady@gmail.com" },
+    update: { passwordHash },
     create: {
       name: "Brady",
-      email: "admin@resultreach.com",
+      email: "onebrady@gmail.com",
       passwordHash,
       role: "admin",
     },
   })
 
-  console.log(`✅ Admin user created: ${admin.email}`)
-  console.log(`   Password: changeme123 (change this!)`)
+  console.log(`✅ Admin user ready: ${admin.email}`)
   console.log("")
   console.log("🚀 Seed complete. Run 'npm run dev' to start.")
 }
