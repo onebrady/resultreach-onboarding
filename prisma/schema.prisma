@@ -11,13 +11,28 @@ model User {
   id            String    @id @default(cuid())
   name          String
   email         String    @unique
-  passwordHash  String
+  passwordHash  String?   // null until user sets password via invite
   role          String    @default("admin") // admin | manager
+  status        String    @default("active") // active | invited | disabled
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   clients       Client[]  @relation("CreatedBy")
   assignments   Client[]  @relation("AssignedTo")
+  userInvite    UserInviteToken?
+}
+
+// ─── Admin user invite tokens ────────────────────────────────────
+model UserInviteToken {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([token])
 }
 
 // ─── Clients (companies being onboarded) ─────────────────────────
@@ -42,6 +57,7 @@ model Client {
   inviteToken   InviteToken?
   submission    Submission?
   assets        Asset[]
+  messages      Message[]
   emailLogs     EmailLog[]
 
   @@index([status])
@@ -128,6 +144,22 @@ model Asset {
   createdAt   DateTime  @default(now())
 
   @@index([clientId])
+}
+
+// ─── Client messages from onboarding form ────────────────────────
+model Message {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  content     String    @db.Text
+  senderName  String
+  senderEmail String
+  formStep    Int?      // which step they were on when they sent it
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([clientId])
+  @@index([readAt])
 }
 
 // ─── Email audit trail ───────────────────────────────────────────

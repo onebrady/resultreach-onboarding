@@ -190,3 +190,104 @@ export async function sendCompletionNotification(clientId: string, teamEmail: st
 
   return result
 }
+
+/**
+ * Send invite email to a new admin user
+ */
+export async function sendUserInviteEmail(userId: string, token: string) {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+  })
+
+  const link = `${APP_URL}/setup/${token}`
+
+  const html = baseTemplate(`
+    <h1>You&apos;re Invited to ${APP_NAME}</h1>
+    <p>Hi ${user.name},</p>
+    <p>You&apos;ve been invited to join the <strong>${APP_NAME}</strong> onboarding platform as a team member. Click below to set your password and activate your account.</p>
+    <p style="text-align: center; margin: 24px 0;">
+      <a href="${link}" class="btn">Set Your Password &rarr;</a>
+    </p>
+    <p style="color: #9CA3AF; font-size: 13px;">This link will expire in 30 days. If you didn&apos;t expect this invite, you can safely ignore this email.</p>
+  `)
+
+  const result = await resend.emails.send({
+    from: FROM,
+    to: user.email,
+    subject: `${APP_NAME} — You're Invited`,
+    html,
+  })
+
+  return result
+}
+
+/**
+ * Notify internal team when a client sends a message from the form
+ */
+export async function sendClientMessageNotification(clientId: string, messageId: string, teamEmail: string) {
+  const client = await prisma.client.findUniqueOrThrow({
+    where: { id: clientId },
+    include: { submission: true },
+  })
+
+  const message = await prisma.message.findUniqueOrThrow({
+    where: { id: messageId },
+  })
+
+  const stepLabels: Record<number, string> = {
+    1: "Company Profile",
+    2: "Services & Differentiators",
+    3: "SWOT Analysis",
+    4: "Team & Contacts",
+    5: "Current Marketing",
+    6: "Platform Access",
+    7: "Goals & Priorities",
+  }
+
+  const stepName = message.formStep ? stepLabels[message.formStep] || `Step ${message.formStep}` : "Unknown"
+  const completedSteps = (client.submission?.completedSteps as number[]) || []
+  const progress = Math.round((completedSteps.length / 7) * 100)
+  const adminLink = `${APP_URL}/admin/clients/${clientId}`
+  const sentAt = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Chicago",
+  }).format(message.createdAt)
+
+  const html = baseTemplate(`
+    <h1>&#128172; New Message from Client</h1>
+    <div class="highlight-box">
+      <p><strong>From:</strong> ${message.senderName} (${message.senderEmail})</p>
+      <p><strong>Company:</strong> ${client.companyName}</p>
+      <p><strong>Form Section:</strong> ${stepName}</p>
+      <p><strong>Progress:</strong> ${progress}% complete (${completedSteps.length}/7 sections)</p>
+      <p><strong>Sent:</strong> ${sentAt} CST</p>
+    </div>
+    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="color: #1B3A5C; margin: 0; white-space: pre-wrap;">${message.content}</p>
+    </div>
+    <p style="text-align: center; margin: 24px 0;">
+      <a href="${adminLink}" class="btn">View Client Details &rarr;</a>
+    </p>
+  `)
+
+  const result = await resend.emails.send({
+    from: FROM,
+    to: teamEmail,
+    subject: `💬 ${client.companyName} — New Message from ${message.senderName}`,
+    html,
+  })
+
+  await prisma.emailLog.create({
+    data: {
+      clientId,
+      type: "internal_notification",
+      recipient: teamEmail,
+      subject: `💬 ${client.companyName} — New Message from ${message.senderName}`,
+      resendId: result.data?.id || null,
+      status: result.error ? "failed" : "sent",
+    },
+  })
+
+  return result
+}

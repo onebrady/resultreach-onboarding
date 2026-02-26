@@ -12,6 +12,7 @@ import { Step4Contacts } from "@/components/onboard/steps/step-4-contacts"
 import { Step5Marketing } from "@/components/onboard/steps/step-5-marketing"
 import { Step6Platforms } from "@/components/onboard/steps/step-6-platforms"
 import { Step7Goals } from "@/components/onboard/steps/step-7-goals"
+import { MessagePanel } from "@/components/onboard/message-panel"
 import { ChevronLeft, ChevronRight, Send, Save } from "lucide-react"
 
 const TOTAL_STEPS = 7
@@ -314,6 +315,13 @@ export default function OnboardPage() {
           </main>
         </div>
       </div>
+
+      {/* Floating message panel */}
+      <MessagePanel
+        token={token}
+        currentStep={currentStep}
+        contactName={contactName}
+      />
     </div>
   )
 }

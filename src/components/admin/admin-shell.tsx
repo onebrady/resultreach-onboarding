@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { Logo } from "@/components/shared/logo"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, UserCog, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clients", label: "Clients", icon: Users },
+  { href: "/admin/users", label: "Team", icon: UserCog },
 ]
 
 export function AdminShell({
