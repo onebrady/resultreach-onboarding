@@ -13,7 +13,7 @@ import { Step5Marketing } from "@/components/onboard/steps/step-5-marketing"
 import { Step6Platforms } from "@/components/onboard/steps/step-6-platforms"
 import { Step7Goals } from "@/components/onboard/steps/step-7-goals"
 import { MessagePanel } from "@/components/onboard/message-panel"
-import { ChevronLeft, ChevronRight, Send, Save } from "lucide-react"
+import { ChevronLeft, ChevronRight, Send, Save, MessageCircle } from "lucide-react"
 
 const TOTAL_STEPS = 7
 const AUTO_SAVE_DELAY = 3000
@@ -32,6 +32,7 @@ export default function OnboardPage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [formData, setFormData] = useState<Record<string, unknown>>({})
   const [dirty, setDirty] = useState(false)
+  const [messagePanelOpen, setMessagePanelOpen] = useState(false)
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
 
   // Load form state
@@ -221,6 +222,13 @@ export default function OnboardPage() {
                 Saved
               </span>
             )}
+            <button
+              onClick={() => setMessagePanelOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-600 hover:bg-brand-100 hover:text-brand-700 active:scale-[0.97] transition-all duration-150 border border-brand-200/60"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Need Help?
+            </button>
           </div>
         </div>
       </header>
@@ -321,6 +329,8 @@ export default function OnboardPage() {
         token={token}
         currentStep={currentStep}
         contactName={contactName}
+        open={messagePanelOpen}
+        onOpenChange={setMessagePanelOpen}
       />
     </div>
   )

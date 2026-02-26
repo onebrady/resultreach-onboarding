@@ -8,10 +8,11 @@ interface MessagePanelProps {
   token: string
   currentStep: number
   contactName: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export function MessagePanel({ token, currentStep, contactName }: MessagePanelProps) {
-  const [open, setOpen] = useState(false)
+export function MessagePanel({ token, currentStep, contactName, open, onOpenChange }: MessagePanelProps) {
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
@@ -32,7 +33,7 @@ export function MessagePanel({ token, currentStep, contactName }: MessagePanelPr
         setMessage("")
         setTimeout(() => {
           setSent(false)
-          setOpen(false)
+          onOpenChange(false)
         }, 3000)
       }
     } finally {
@@ -45,7 +46,7 @@ export function MessagePanel({ token, currentStep, contactName }: MessagePanelPr
       {/* Floating trigger button */}
       {!open && (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => onOpenChange(true)}
           className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-brand-500 text-white shadow-lg hover:shadow-xl hover:bg-brand-600 active:scale-95 transition-all duration-200 flex items-center justify-center group"
           aria-label="Send a message to the ResultReach team"
         >
@@ -68,7 +69,7 @@ export function MessagePanel({ token, currentStep, contactName }: MessagePanelPr
                 </p>
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => onOpenChange(false)}
                 className="text-navy-300 hover:text-white transition-colors p-1"
               >
                 <X className="w-5 h-5" />
