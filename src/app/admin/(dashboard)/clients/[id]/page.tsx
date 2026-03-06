@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/utils"
 import { ClientActions } from "@/components/admin/client-actions"
+import { EditClientDetails } from "@/components/admin/edit-client-details"
 import {
   Building2, User, Mail, Phone, Globe, Calendar, Clock,
   ArrowLeft, CheckCircle2, AlertCircle
@@ -58,7 +59,7 @@ export default async function ClientDetailPage({
             </p>
           </div>
         </div>
-        <ClientActions clientId={client.id} status={client.status} />
+        <ClientActions clientId={client.id} status={client.status} companyName={client.companyName} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -175,30 +176,20 @@ export default async function ClientDetailPage({
 
         {/* Sidebar - 1 col */}
         <div className="space-y-4">
-          {/* Client Info */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-sm font-semibold text-navy-600">Client Details</h3>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoRow icon={<Building2 className="w-3.5 h-3.5" />} label="Company" value={client.companyName} />
-              <InfoRow icon={<User className="w-3.5 h-3.5" />} label="Contact" value={client.contactName} />
-              <InfoRow icon={<Mail className="w-3.5 h-3.5" />} label="Email" value={client.contactEmail} />
-              {client.contactPhone && (
-                <InfoRow icon={<Phone className="w-3.5 h-3.5" />} label="Phone" value={client.contactPhone} />
-              )}
-              {client.websiteUrl && (
-                <InfoRow icon={<Globe className="w-3.5 h-3.5" />} label="Website" value={client.websiteUrl} link />
-              )}
-              {client.industry && (
-                <InfoRow icon={<Building2 className="w-3.5 h-3.5" />} label="Industry" value={client.industry} />
-              )}
-              <InfoRow icon={<Calendar className="w-3.5 h-3.5" />} label="Created" value={formatDate(client.createdAt)} />
-              {client.assignedTo && (
-                <InfoRow icon={<User className="w-3.5 h-3.5" />} label="Assigned" value={client.assignedTo.name} />
-              )}
-            </CardContent>
-          </Card>
+          {/* Client Info (editable) */}
+          <EditClientDetails
+            client={{
+              id: client.id,
+              companyName: client.companyName,
+              contactName: client.contactName,
+              contactEmail: client.contactEmail,
+              contactPhone: client.contactPhone,
+              industry: client.industry,
+              websiteUrl: client.websiteUrl,
+              createdAt: client.createdAt.toISOString(),
+              assignedTo: client.assignedTo,
+            }}
+          />
 
           {/* Invite Link */}
           {inviteLink && (

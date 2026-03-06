@@ -3,13 +3,19 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Send, Bell, CheckCircle2 } from "lucide-react"
+import { Send, Bell, CheckCircle2, Trash2 } from "lucide-react"
 
-export function ClientActions({ clientId, status }: { clientId: string; status: string }) {
+export function ClientActions({ clientId, status, companyName }: {
+  clientId: string
+  status: string
+  companyName: string
+}) {
   const router = useRouter()
   const [sending, setSending] = useState(false)
   const [reminding, setReminding] = useState(false)
   const [marking, setMarking] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const sendInvite = async () => {
     setSending(true)
@@ -44,6 +50,19 @@ export function ClientActions({ clientId, status }: { clientId: string; status: 
     router.refresh()
   }
 
+  const handleDelete = async () => {
+    setDeleting(true)
+    const res = await fetch(`/api/clients/${clientId}`, { method: "DELETE" })
+    if (res.ok) {
+      router.push("/admin/clients")
+      router.refresh()
+    } else {
+      setDeleting(false)
+      setConfirmDelete(false)
+      alert("Failed to delete client. Please try again.")
+    }
+  }
+
   return (
     <div className="flex items-center gap-2 shrink-0">
       {(status === "invited" || status === "in_progress") && (
@@ -63,6 +82,39 @@ export function ClientActions({ clientId, status }: { clientId: string; status: 
           <CheckCircle2 className="w-3.5 h-3.5" />
           Mark Reviewed
         </Button>
+      )}
+
+      {/* Delete with confirmation */}
+      {!confirmDelete ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setConfirmDelete(true)}
+          className="text-surface-400 hover:text-red-500 hover:bg-red-50"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      ) : (
+        <div className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5">
+          <span className="text-xs text-red-600 font-medium">Delete {companyName}?</span>
+          <Button
+            size="sm"
+            onClick={handleDelete}
+            loading={deleting}
+            className="bg-red-500 hover:bg-red-600 text-white h-7 px-2.5 text-xs"
+          >
+            Yes, delete
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirmDelete(false)}
+            disabled={deleting}
+            className="h-7 px-2 text-xs"
+          >
+            Cancel
+          </Button>
+        </div>
       )}
     </div>
   )
